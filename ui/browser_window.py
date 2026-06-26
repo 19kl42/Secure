@@ -2,7 +2,7 @@ from PyQt6.QtCore import QUrl, Qt
 from PyQt6.QtGui import QAction, QIcon, QKeySequence, QShortcut
 from PyQt6.QtWidgets import QMainWindow, QToolBar, QLineEdit, QTabWidget, QWidget, QVBoxLayout, QStyle
 from PyQt6.QtWebEngineWidgets import QWebEngineView
-from PyQt6.QtWebEngineCore import QWebEngineProfile
+from PyQt6.QtWebEngineCore import QWebEngineProfile, QWebEngineSettings
 from ui.privacy_shield import PrivacyShieldDialog
 from ui.passkey_dialog import PasskeyManagerDialog
 from ui.settings_dialog import SettingsDialog
@@ -104,10 +104,16 @@ class BrowserWindow(QMainWindow):
         
         self.passkey_handler = PasskeyHandler()
         self.interceptor = PrivacyInterceptor(self.blocklist_manager, self)
+        
+        # プロファイルの設定 (Widevine等のプラグインを有効化)
         self.profile = QWebEngineProfile.defaultProfile()
         self.profile.setUrlRequestInterceptor(self.interceptor)
+        settings = self.profile.settings()
+        settings.setAttribute(QWebEngineSettings.WebAttribute.PluginsEnabled, True)
+        settings.setAttribute(QWebEngineSettings.WebAttribute.PlaybackRequiresUserGesture, False)
+        settings.setAttribute(QWebEngineSettings.WebAttribute.FullScreenSupportEnabled, True)
 
-        # Tabs setup
+        self.setup_ui()
         self.tabs = QTabWidget()
         self.tabs.setDocumentMode(True)
         self.tabs.setTabsClosable(True)

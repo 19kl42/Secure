@@ -29,15 +29,28 @@ def inject_widevine():
     arch = "mac_arm64" if platform.machine() == "arm64" else "mac_x64"
     
     cdm_path = None
+    cdm_version = "4.10.2710.0" # デフォルトのフォールバックバージョン
     for version in versions:
         potential_path = os.path.join(base_path, version, "Libraries", "WidevineCdm", "_platform_specific", arch, "libwidevinecdm.dylib")
         if os.path.exists(potential_path):
             cdm_path = potential_path
+            
+            # バージョン情報の取得 (NetflixなどのDRM認証に必須)
+            import json
+            manifest_path = os.path.join(base_path, version, "Libraries", "WidevineCdm", "manifest.json")
+            if os.path.exists(manifest_path):
+                try:
+                    with open(manifest_path, 'r') as f:
+                        manifest = json.load(f)
+                        if "version" in manifest:
+                            cdm_version = manifest["version"]
+                except Exception:
+                    pass
             break
             
     if cdm_path:
-        print(f"[Widevine] 自動検出・組み込み完了: {cdm_path}")
-        new_flags = f"{flags} --widevine-cdm-path=\"{cdm_path}\""
+        print(f"[Widevine] 自動検出完了: {cdm_path} (Version: {cdm_version})")
+        new_flags = f"{flags} --widevine-cdm-path=\"{cdm_path}\" --widevine-cdm-version=\"{cdm_version}\""
         os.environ["QTWEBENGINE_CHROMIUM_FLAGS"] = new_flags.strip()
     else:
         print(f"[Widevine] 指定アーキテクチャ({arch})のCDMが見つかりませんでした。")
