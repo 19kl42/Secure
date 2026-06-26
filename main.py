@@ -10,6 +10,10 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 # ＋Widevine DRMを有効化
 os.environ["QTWEBENGINE_CHROMIUM_FLAGS"] = "--disable-gpu --enable-widevine"
 
+# PC内のChromeからWidevineモジュールを自動抽出して組み込む
+from core.widevine_injector import inject_widevine
+inject_widevine()
+
 from PyQt6.QtWidgets import QApplication
 from ui.browser_window import BrowserWindow
 
