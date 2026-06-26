@@ -1,11 +1,12 @@
 from PyQt6.QtCore import QUrl
-from PyQt6.QtWidgets import QMainWindow, QToolBar, QLineEdit, QAction
+from PyQt6.QtWidgets import QMainWindow, QToolBar, QLineEdit, QAction, QTabWidget, QWidget, QVBoxLayout
 from PyQt6.QtWebEngineWidgets import QWebEngineView
 from PyQt6.QtWebEngineCore import QWebEngineProfile
 from ui.privacy_shield import PrivacyShieldDialog
 from ui.passkey_dialog import PasskeyManagerDialog
 from core.interceptor import PrivacyInterceptor
 from core.passkey_handler import PasskeyHandler
+from core.engine import CustomWebEnginePage
 
 class BrowserWindow(QMainWindow):
     def __init__(self):
@@ -19,31 +20,34 @@ class BrowserWindow(QMainWindow):
         self.profile = QWebEngineProfile.defaultProfile()
         self.profile.setUrlRequestInterceptor(self.interceptor)
 
-        # Engine setup
-        self.browser = QWebEngineView()
-        try:
-            self.browser.page().webAuthUxRequested.connect(self.passkey_handler.on_passkey_requested)
-        except AttributeError:
-            print("警告: 使用中のPyQt6バージョンは webAuthUxRequested をサポートしていません。")
-
-        self.browser.setUrl(QUrl("https://duckduckgo.com"))
-        self.setCentralWidget(self.browser)
+        # Tabs setup
+        self.tabs = QTabWidget()
+        self.tabs.setDocumentMode(True)
+        self.tabs.setTabsClosable(True)
+        self.tabs.tabCloseRequested.connect(self.close_tab)
+        self.tabs.currentChanged.connect(self.current_tab_changed)
+        self.setCentralWidget(self.tabs)
 
         # Navigation Bar
         navbar = QToolBar("Navigation")
         self.addToolBar(navbar)
 
         back_btn = QAction("←", self)
-        back_btn.triggered.connect(self.browser.back)
+        back_btn.triggered.connect(lambda: self.current_browser().back() if self.current_browser() else None)
         navbar.addAction(back_btn)
 
         forward_btn = QAction("→", self)
-        forward_btn.triggered.connect(self.browser.forward)
+        forward_btn.triggered.connect(lambda: self.current_browser().forward() if self.current_browser() else None)
         navbar.addAction(forward_btn)
 
         reload_btn = QAction("↻", self)
-        reload_btn.triggered.connect(self.browser.reload)
+        reload_btn.triggered.connect(lambda: self.current_browser().reload() if self.current_browser() else None)
         navbar.addAction(reload_btn)
+
+        new_tab_btn = QAction("＋", self)
+        new_tab_btn.setToolTip("新しいタブを開く")
+        new_tab_btn.triggered.connect(lambda: self.add_new_tab("https://duckduckgo.com", "New Tab"))
+        navbar.addAction(new_tab_btn)
 
         self.url_bar = QLineEdit()
         self.url_bar.returnPressed.connect(self.navigate_to_url)
@@ -57,7 +61,56 @@ class BrowserWindow(QMainWindow):
         passkey_btn.triggered.connect(self.show_passkey_manager)
         navbar.addAction(passkey_btn)
 
-        self.browser.urlChanged.connect(self.update_url_bar)
+        # 初期タブを作成
+        self.add_new_tab("https://duckduckgo.com", "Homepage")
+
+    def add_new_tab(self, url, label="Loading..."):
+        browser = QWebEngineView()
+        page = CustomWebEnginePage(self.profile, browser)
+        page.set_browser_window(self)
+        browser.setPage(page)
+        
+        try:
+            page.webAuthUxRequested.connect(self.passkey_handler.on_passkey_requested)
+        except AttributeError:
+            pass # PyQt6 バージョンが古い場合
+
+        if url:
+            browser.setUrl(QUrl(url))
+            
+        i = self.tabs.addTab(browser, label)
+        self.tabs.setCurrentIndex(i)
+
+        # タイトル変更とURL変更のシグナルをタブのインデックスに合わせて処理
+        browser.titleChanged.connect(lambda title, browser=browser:
+                                     self.tabs.setTabText(self.tabs.indexOf(browser), title[:20] + "..." if len(title) > 20 else title))
+        
+        browser.urlChanged.connect(lambda qurl, browser=browser:
+                                   self.update_url_bar(qurl, browser))
+                                   
+        return browser
+
+    def close_tab(self, i):
+        if self.tabs.count() < 2:
+            return # 最後のタブは閉じないか、閉じた場合に新規タブを作るなどの処理
+        widget = self.tabs.widget(i)
+        self.tabs.removeTab(i)
+        widget.deleteLater()
+
+    def current_browser(self):
+        return self.tabs.currentWidget()
+
+    def current_tab_changed(self, i):
+        browser = self.current_browser()
+        if browser and browser.url():
+            self.update_url_bar(browser.url(), browser)
+
+    def update_url_bar(self, qurl, browser=None):
+        # シグナル発火元が現在のタブの場合のみ更新
+        if browser != self.current_browser():
+            return
+        self.url_bar.setText(qurl.toString())
+        self.url_bar.setCursorPosition(0)
 
     def navigate_to_url(self):
         url = self.url_bar.text()
@@ -66,14 +119,16 @@ class BrowserWindow(QMainWindow):
                 url = "https://" + url
             else:
                 url = f"https://duckduckgo.com/?q={url}"
-        self.browser.setUrl(QUrl(url))
-
-    def update_url_bar(self, qurl):
-        self.url_bar.setText(qurl.toString())
-        self.url_bar.setCursorPosition(0)
+        
+        browser = self.current_browser()
+        if browser:
+            browser.setUrl(QUrl(url))
 
     def show_privacy_shield(self):
-        current_url = self.browser.url()
+        browser = self.current_browser()
+        if not browser:
+            return
+        current_url = browser.url()
         host = current_url.host()
         if not host:
             return
