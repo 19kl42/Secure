@@ -4,9 +4,12 @@ from PyQt6.QtWebEngineWidgets import QWebEngineView
 from PyQt6.QtWebEngineCore import QWebEngineProfile
 from ui.privacy_shield import PrivacyShieldDialog
 from ui.passkey_dialog import PasskeyManagerDialog
+from ui.settings_dialog import SettingsDialog
 from core.interceptor import PrivacyInterceptor
 from core.passkey_handler import PasskeyHandler
 from core.engine import CustomWebEnginePage
+from core.settings_manager import SettingsManager
+from core.news_fetcher import NewsFetcher
 
 class BrowserWindow(QMainWindow):
     def __init__(self):
@@ -15,6 +18,10 @@ class BrowserWindow(QMainWindow):
         self.resize(1024, 768)
 
         # Core logic setup
+        self.settings = SettingsManager()
+        self.news_fetcher = NewsFetcher()
+        self.news_fetcher.fetch_feeds_background() # バックグラウンドでニュース更新
+        
         self.passkey_handler = PasskeyHandler()
         self.interceptor = PrivacyInterceptor(self)
         self.profile = QWebEngineProfile.defaultProfile()
@@ -46,7 +53,7 @@ class BrowserWindow(QMainWindow):
 
         new_tab_btn = QAction("＋", self)
         new_tab_btn.setToolTip("新しいタブを開く")
-        new_tab_btn.triggered.connect(lambda: self.add_new_tab("https://duckduckgo.com", "New Tab"))
+        new_tab_btn.triggered.connect(lambda: self.add_new_tab("", "New Tab")) # 空URLでニュースタブ
         navbar.addAction(new_tab_btn)
 
         self.url_bar = QLineEdit()
@@ -60,11 +67,16 @@ class BrowserWindow(QMainWindow):
         passkey_btn = QAction("🔑 Passkeys", self)
         passkey_btn.triggered.connect(self.show_passkey_manager)
         navbar.addAction(passkey_btn)
+        
+        settings_btn = QAction("⚙️ Settings", self)
+        settings_btn.triggered.connect(self.show_settings)
+        navbar.addAction(settings_btn)
 
-        # 初期タブを作成
-        self.add_new_tab("https://duckduckgo.com", "Homepage")
+        # 初期タブを作成 (起動ページ設定を読み込む)
+        startup_url = self.settings.get_startup_url()
+        self.add_new_tab(startup_url, "Homepage")
 
-    def add_new_tab(self, url, label="Loading..."):
+    def add_new_tab(self, url="", label="New Tab"):
         browser = QWebEngineView()
         page = CustomWebEnginePage(self.profile, browser)
         page.set_browser_window(self)
@@ -73,15 +85,19 @@ class BrowserWindow(QMainWindow):
         try:
             page.webAuthUxRequested.connect(self.passkey_handler.on_passkey_requested)
         except AttributeError:
-            pass # PyQt6 バージョンが古い場合
+            pass 
 
         if url:
             browser.setUrl(QUrl(url))
+        else:
+            # URLが空の場合はニュースハブのHTMLを流し込む
+            html = self.news_fetcher.get_html()
+            browser.setHtml(html, QUrl("about:newtab"))
+            label = "News Hub"
             
         i = self.tabs.addTab(browser, label)
         self.tabs.setCurrentIndex(i)
 
-        # タイトル変更とURL変更のシグナルをタブのインデックスに合わせて処理
         browser.titleChanged.connect(lambda title, browser=browser:
                                      self.tabs.setTabText(self.tabs.indexOf(browser), title[:20] + "..." if len(title) > 20 else title))
         
@@ -92,7 +108,7 @@ class BrowserWindow(QMainWindow):
 
     def close_tab(self, i):
         if self.tabs.count() < 2:
-            return # 最後のタブは閉じないか、閉じた場合に新規タブを作るなどの処理
+            return 
         widget = self.tabs.widget(i)
         self.tabs.removeTab(i)
         widget.deleteLater()
@@ -106,14 +122,21 @@ class BrowserWindow(QMainWindow):
             self.update_url_bar(browser.url(), browser)
 
     def update_url_bar(self, qurl, browser=None):
-        # シグナル発火元が現在のタブの場合のみ更新
         if browser != self.current_browser():
             return
-        self.url_bar.setText(qurl.toString())
+        
+        url_str = qurl.toString()
+        if url_str == "about:newtab":
+            self.url_bar.setText("") # ニュースハブの場合は空にする
+        else:
+            self.url_bar.setText(url_str)
         self.url_bar.setCursorPosition(0)
 
     def navigate_to_url(self):
         url = self.url_bar.text()
+        if not url:
+            return
+            
         if not url.startswith("http"):
             if "." in url and " " not in url:
                 url = "https://" + url
@@ -130,14 +153,20 @@ class BrowserWindow(QMainWindow):
             return
         current_url = browser.url()
         host = current_url.host()
-        if not host:
+        if not host and current_url.toString() != "about:newtab":
             return
-        
-        stats = self.interceptor.get_stats(host)
-        dialog = PrivacyShieldDialog(self, host, stats)
+            
+        stats = self.interceptor.get_stats(host) if host else {"blocked": [], "third_party": []}
+        dialog = PrivacyShieldDialog(self, host or "News Hub", stats)
         dialog.exec()
 
     def show_passkey_manager(self):
         history = self.passkey_handler.get_history()
         dialog = PasskeyManagerDialog(self, history)
         dialog.exec()
+        
+    def show_settings(self):
+        dialog = SettingsDialog(self, self.settings)
+        if dialog.exec():
+            # 設定が保存されたあとの処理（必要であれば）
+            pass
