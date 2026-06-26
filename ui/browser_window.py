@@ -19,68 +19,70 @@ class BrowserWindow(QMainWindow):
         self.setWindowTitle("MyBrowser - Privacy First")
         self.resize(1024, 768)
 
-        # QSS - Chrome風のモダンなライトテーマ
+        # QSS - 究極のChromeデザイン完全模倣 (Chrome Refresh 2023 / Material You)
         self.setStyleSheet("""
             QMainWindow {
-                background-color: #f1f3f4;
+                background-color: #dfe1e5; /* 非アクティブタブと馴染むウィンドウ背景 */
             }
             QToolBar {
                 background-color: #ffffff;
                 border: none;
                 border-bottom: 1px solid #dadce0;
-                padding: 4px;
-                spacing: 8px;
+                padding: 6px;
+                spacing: 4px;
             }
             QToolButton {
                 background-color: transparent;
-                border-radius: 16px;
+                border-radius: 16px; /* 完全に丸いホバーエフェクト */
                 padding: 6px;
+                margin: 0px 4px;
             }
             QToolButton:hover {
                 background-color: #f1f3f4;
             }
+            QToolButton:pressed {
+                background-color: #e8eaed;
+            }
             QLineEdit {
                 background-color: #f1f3f4;
-                border: 1px solid transparent;
-                border-radius: 16px;
-                padding: 6px 16px;
+                border: 2px solid transparent;
+                border-radius: 18px; /* ピル型のアドレスバー */
+                padding: 8px 20px;
                 font-size: 14px;
+                color: #202124;
                 selection-background-color: #c6d8eb;
+            }
+            QLineEdit:hover {
+                background-color: #e8eaed;
             }
             QLineEdit:focus {
                 background-color: #ffffff;
-                border: 1px solid #4285f4;
+                border: 2px solid #a8c7fa; /* フォーカス時のハイライト */
             }
             QTabWidget::pane {
                 border: none;
-                border-top: 1px solid #dadce0;
+                background-color: #ffffff;
             }
             QTabBar::tab {
-                background-color: #f1f3f4;
+                background-color: transparent; /* アクティブでない時は背景と同化 */
                 color: #5f6368;
                 border: none;
-                border-right: 1px solid #dadce0;
-                padding: 8px 16px;
+                padding: 10px 16px;
                 min-width: 120px;
                 max-width: 240px;
-                border-top-left-radius: 8px;
-                border-top-right-radius: 8px;
-                margin-top: 4px;
+                border-radius: 12px; /* 独立した丸みのあるフローティングタブ */
+                margin-top: 8px;
+                margin-bottom: 2px;
+                margin-left: 2px;
+                margin-right: 2px;
             }
             QTabBar::tab:selected {
                 background-color: #ffffff;
                 color: #202124;
-                border-top: 1px solid #dadce0;
-                border-left: 1px solid #dadce0;
-                border-right: 1px solid #dadce0;
-                margin-top: 0px;
-                border-bottom: 1px solid #ffffff;
+                font-weight: 500;
             }
             QTabBar::tab:hover:!selected {
-                background-color: #e8eaed;
-            }
-            QTabBar::close-button {
-                image: url(''); /* デフォルトを消してOSネイティブっぽくするか、文字で代替可能 */
+                background-color: #d7d8dc; /* わずかに濃いグレーでホバー */
             }
         """)
 
