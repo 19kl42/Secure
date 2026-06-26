@@ -1,9 +1,10 @@
 import json
 import os
+from core.utils import get_data_dir
 
 class BookmarkManager:
     def __init__(self):
-        self.file_path = os.path.join(os.path.dirname(__file__), '..', 'data', 'bookmarks.json')
+        self.file_path = os.path.join(get_data_dir(), 'bookmarks.json')
         self.bookmarks = self.load_bookmarks()
 
     def load_bookmarks(self):

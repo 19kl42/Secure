@@ -9,3 +9,10 @@ data/settings.json
 data/news_cache.json
 data/compiled_blocklist.json
 data/bookmarks.json
+
+# Build outputs
+build/
+dist/
+*.spec
+*.icns
+*.png

@@ -1,9 +1,10 @@
 import json
 import os
+from core.utils import get_data_dir
 
 class SettingsManager:
     def __init__(self):
-        self.settings_path = os.path.join(os.path.dirname(__file__), '..', 'data', 'settings.json')
+        self.settings_path = os.path.join(get_data_dir(), 'settings.json')
         self.default_settings = {
             "startup_url": "https://duckduckgo.com"
         }

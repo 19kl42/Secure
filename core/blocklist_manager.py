@@ -1,5 +1,6 @@
 import json
 import os
+from core.utils import get_data_dir
 import threading
 import urllib.request
 import time
@@ -7,9 +8,9 @@ import time
 class BlocklistManager:
     def __init__(self):
         # 従来の簡易リスト
-        self.basic_blocklist_path = os.path.join(os.path.dirname(__file__), '..', 'data', 'blocklist.json')
+        self.basic_blocklist_path = os.path.join(get_data_dir(), 'blocklist.json')
         # 外部から取得した大規模リスト
-        self.compiled_blocklist_path = os.path.join(os.path.dirname(__file__), '..', 'data', 'compiled_blocklist.json')
+        self.compiled_blocklist_path = os.path.join(get_data_dir(), 'compiled_blocklist.json')
         
         # StevenBlack hosts (Ads & Malware)
         self.list_url = "https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts"

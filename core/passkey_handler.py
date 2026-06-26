@@ -1,9 +1,10 @@
 import json
 import os
+from core.utils import get_data_dir
 
 class PasskeyHandler:
     def __init__(self):
-        self.history_path = os.path.join(os.path.dirname(__file__), '..', 'data', 'history.json')
+        self.history_path = os.path.join(get_data_dir(), 'history.json')
         self.passkey_history = self.load_history()
 
     def load_history(self):

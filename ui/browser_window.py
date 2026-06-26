@@ -1,5 +1,6 @@
 from PyQt6.QtCore import QUrl, Qt
 from PyQt6.QtGui import QAction, QIcon, QKeySequence, QShortcut
+from core.utils import get_resource_path
 from PyQt6.QtWidgets import QMainWindow, QToolBar, QLineEdit, QTabWidget, QWidget, QVBoxLayout, QStyle
 from PyQt6.QtWebEngineWidgets import QWebEngineView
 from PyQt6.QtWebEngineCore import QWebEngineProfile, QWebEngineSettings
@@ -18,6 +19,7 @@ class BrowserWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("MyBrowser - Privacy First")
+        self.setWindowIcon(QIcon(get_resource_path("app_icon.png")))
         self.resize(1024, 768)
 
         # QSS - 究極のChromeデザイン完全模倣 (Chrome Refresh 2023 / Material You)
@@ -113,7 +115,6 @@ class BrowserWindow(QMainWindow):
         settings.setAttribute(QWebEngineSettings.WebAttribute.PlaybackRequiresUserGesture, False)
         settings.setAttribute(QWebEngineSettings.WebAttribute.FullScreenSupportEnabled, True)
 
-        self.setup_ui()
         self.tabs = QTabWidget()
         self.tabs.setDocumentMode(True)
         self.tabs.setTabsClosable(True)

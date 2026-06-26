@@ -1,12 +1,13 @@
 import json
 import os
+from core.utils import get_data_dir
 import threading
 import urllib.request
 import xml.etree.ElementTree as ET
 
 class NewsFetcher:
     def __init__(self):
-        self.cache_path = os.path.join(os.path.dirname(__file__), '..', 'data', 'news_cache.json')
+        self.cache_path = os.path.join(get_data_dir(), 'news_cache.json')
         self.feeds = [
             {"name": "JPCERT/CC (Security Alerts)", "url": "https://www.jpcert.or.jp/rss/jpcert.rdf"},
             {"name": "ZDNet Japan (Security)", "url": "https://japan.zdnet.com/rss/news/security/"},
