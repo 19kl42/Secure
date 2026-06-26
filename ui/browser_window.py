@@ -12,6 +12,7 @@ from core.engine import CustomWebEnginePage
 from core.settings_manager import SettingsManager
 from core.news_fetcher import NewsFetcher
 from core.blocklist_manager import BlocklistManager
+from core.bookmark_manager import BookmarkManager
 
 class BrowserWindow(QMainWindow):
     def __init__(self):
@@ -99,6 +100,8 @@ class BrowserWindow(QMainWindow):
         self.blocklist_manager = BlocklistManager()
         self.blocklist_manager.update_list_background()
         
+        self.bookmark_manager = BookmarkManager()
+        
         self.passkey_handler = PasskeyHandler()
         self.interceptor = PrivacyInterceptor(self.blocklist_manager, self)
         self.profile = QWebEngineProfile.defaultProfile()
@@ -137,6 +140,11 @@ class BrowserWindow(QMainWindow):
         self.url_bar.setPlaceholderText("検索または URL を入力")
         self.url_bar.returnPressed.connect(self.navigate_to_url)
         navbar.addWidget(self.url_bar)
+
+        self.bookmark_btn = QAction("☆", self)
+        self.bookmark_btn.setToolTip("ブックマークに追加")
+        self.bookmark_btn.triggered.connect(self.toggle_bookmark)
+        navbar.addAction(self.bookmark_btn)
         
         new_tab_btn = QAction("＋", self)
         new_tab_btn.setToolTip("新しいタブを開く")
@@ -148,11 +156,19 @@ class BrowserWindow(QMainWindow):
         shield_btn.triggered.connect(self.show_privacy_shield)
         navbar.addAction(shield_btn)
         
-        passkey_btn = QAction("🔑", self)
-        passkey_btn.setToolTip("Passkeys")
-        passkey_btn.triggered.connect(self.show_passkey_manager)
-        navbar.addAction(passkey_btn)
-        
+        # Passkey Manager Button
+        self.passkey_btn = QAction("🔑", self)
+        self.passkey_btn.setToolTip("Passkeys")
+        self.passkey_btn.triggered.connect(self.show_passkey_manager)
+        navbar.addAction(self.passkey_btn)
+
+        # ブックマークバーの構築
+        self.bookmark_bar = QToolBar("Bookmarks")
+        self.bookmark_bar.setMovable(False)
+        self.bookmark_bar.setStyleSheet("QToolBar { border: none; padding: 2px 8px; background-color: #ffffff; border-bottom: 1px solid #dadce0; } QToolButton { font-size: 13px; border-radius: 12px; padding: 4px 8px; color: #5f6368; } QToolButton:hover { background-color: #f1f3f4; }")
+        self.addToolBar(Qt.ToolBarArea.TopToolBarArea, self.bookmark_bar)
+        self.update_bookmark_bar()
+
         settings_btn = QAction("⚙️", self)
         settings_btn.setToolTip("Settings")
         settings_btn.triggered.connect(self.show_settings)
@@ -220,31 +236,75 @@ class BrowserWindow(QMainWindow):
         if browser and browser.url():
             self.update_url_bar(browser.url(), browser)
 
-    def update_url_bar(self, qurl, browser=None):
+    def update_url_bar(self, q, browser=None):
         if browser != self.current_browser():
             return
-        
-        url_str = qurl.toString()
-        if url_str == "about:newtab":
+        url = q.toString()
+        if url == "about:newtab":
             self.url_bar.setText("")
         else:
-            self.url_bar.setText(url_str)
+            self.url_bar.setText(url)
         self.url_bar.setCursorPosition(0)
+        
+        # ブックマーク状態の更新 (★の色付け)
+        if hasattr(self, 'bookmark_btn'):
+            if self.bookmark_manager.is_bookmarked(url):
+                self.bookmark_btn.setText("★")
+            else:
+                self.bookmark_btn.setText("☆")
 
     def navigate_to_url(self):
         url = self.url_bar.text()
         if not url:
             return
             
-        if not url.startswith("http"):
-            if "." in url and " " not in url:
-                url = "https://" + url
+        if not url.startswith('http'):
+            # Google検索をデフォルトとする判定ロジック
+            if '.' in url and ' ' not in url:
+                url = 'https://' + url
             else:
-                url = f"https://duckduckgo.com/?q={url}"
+                import urllib.parse
+                query = urllib.parse.quote(url)
+                url = f'https://www.google.com/search?q={query}'
         
         browser = self.current_browser()
         if browser:
             browser.setUrl(QUrl(url))
+
+    def toggle_bookmark(self):
+        browser = self.current_browser()
+        if not browser:
+            return
+        url = browser.url().toString()
+        title = browser.title() or url
+        
+        if self.bookmark_manager.is_bookmarked(url):
+            self.bookmark_manager.remove_bookmark(url)
+        else:
+            self.bookmark_manager.add_bookmark(title, url)
+            
+        self.update_bookmark_bar()
+        self.update_url_bar(browser.url(), browser)
+
+    def update_bookmark_bar(self):
+        self.bookmark_bar.clear()
+        for b in self.bookmark_manager.bookmarks:
+            # タイトルが長い場合は切り詰める
+            title = (b['title'][:15] + '..') if len(b['title']) > 15 else b['title']
+            action = QAction(title, self)
+            action.setToolTip(b['url'])
+            action.setData(b['url'])
+            action.triggered.connect(self._bookmark_clicked)
+            self.bookmark_bar.addAction(action)
+
+    def _bookmark_clicked(self):
+        action = self.sender()
+        if action:
+            url = action.data()
+            if self.current_browser():
+                self.current_browser().setUrl(QUrl(url))
+            else:
+                self.add_new_tab(url, "Bookmark")
 
     def show_privacy_shield(self):
         browser = self.current_browser()

@@ -6,7 +6,9 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 # 修正: macOS(M1/Intel等の特定バージョン)のMetalシェーダーコンパイルエラーを回避
 # WebEngineのGPUレンダリングで画面が表示されなくなるインシデント対策
-os.environ["QTWEBENGINE_CHROMIUM_FLAGS"] = "--disable-gpu"
+# ＋画面複製・録画時にDRMコンテンツ(Netflix等)が真っ黒になるHDCPブロックを回避
+# ＋Widevine DRMを有効化
+os.environ["QTWEBENGINE_CHROMIUM_FLAGS"] = "--disable-gpu --enable-widevine"
 
 from PyQt6.QtWidgets import QApplication
 from ui.browser_window import BrowserWindow
