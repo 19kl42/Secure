@@ -4,6 +4,10 @@ import os
 # 追加: Pythonモジュール検索パスに現在のディレクトリを追加
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
+# 修正: macOS(M1/Intel等の特定バージョン)のMetalシェーダーコンパイルエラーを回避
+# WebEngineのGPUレンダリングで画面が表示されなくなるインシデント対策
+os.environ["QTWEBENGINE_CHROMIUM_FLAGS"] = "--disable-gpu"
+
 from PyQt6.QtWidgets import QApplication
 from ui.browser_window import BrowserWindow
 
