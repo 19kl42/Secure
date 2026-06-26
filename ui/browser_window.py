@@ -11,6 +11,7 @@ from core.passkey_handler import PasskeyHandler
 from core.engine import CustomWebEnginePage
 from core.settings_manager import SettingsManager
 from core.news_fetcher import NewsFetcher
+from core.blocklist_manager import BlocklistManager
 
 class BrowserWindow(QMainWindow):
     def __init__(self):
@@ -88,8 +89,11 @@ class BrowserWindow(QMainWindow):
         self.news_fetcher = NewsFetcher()
         self.news_fetcher.fetch_feeds_background()
         
+        self.blocklist_manager = BlocklistManager()
+        self.blocklist_manager.update_list_background()
+        
         self.passkey_handler = PasskeyHandler()
-        self.interceptor = PrivacyInterceptor(self)
+        self.interceptor = PrivacyInterceptor(self.blocklist_manager, self)
         self.profile = QWebEngineProfile.defaultProfile()
         self.profile.setUrlRequestInterceptor(self.interceptor)
 

@@ -7,3 +7,4 @@ __pycache__/
 data/history.json
 data/settings.json
 data/news_cache.json
+data/compiled_blocklist.json
