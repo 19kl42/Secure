@@ -13,6 +13,7 @@ from ui.browser_window import BrowserWindow
 
 def main():
     app = QApplication(sys.argv)
+    app.setStyle("Fusion") # Mac特有のネイティブスタイルを無効化しQSSを完全適用
     app.setApplicationName("MyBrowser")
     
     window = BrowserWindow()

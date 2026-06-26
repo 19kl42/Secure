@@ -20,22 +20,25 @@ class BrowserWindow(QMainWindow):
         self.resize(1024, 768)
 
         # QSS - 究極のChromeデザイン完全模倣 (Chrome Refresh 2023 / Material You)
+        # QSS - 究極のChromeデザイン完全模倣 (Chrome Refresh 2023 / Material You)
         self.setStyleSheet("""
             QMainWindow {
-                background-color: #dfe1e5; /* 非アクティブタブと馴染むウィンドウ背景 */
+                background-color: #dfe1e5; 
             }
             QToolBar {
                 background-color: #ffffff;
                 border: none;
                 border-bottom: 1px solid #dadce0;
-                padding: 6px;
-                spacing: 4px;
+                padding: 4px 8px;
+                spacing: 6px;
             }
             QToolButton {
                 background-color: transparent;
-                border-radius: 16px; /* 完全に丸いホバーエフェクト */
-                padding: 6px;
-                margin: 0px 4px;
+                border-radius: 18px; 
+                min-width: 36px;
+                min-height: 36px;
+                font-size: 18px;
+                color: #5f6368;
             }
             QToolButton:hover {
                 background-color: #f1f3f4;
@@ -46,8 +49,9 @@ class BrowserWindow(QMainWindow):
             QLineEdit {
                 background-color: #f1f3f4;
                 border: 2px solid transparent;
-                border-radius: 18px; /* ピル型のアドレスバー */
-                padding: 8px 20px;
+                border-radius: 18px;
+                padding: 6px 20px;
+                min-height: 24px;
                 font-size: 14px;
                 color: #202124;
                 selection-background-color: #c6d8eb;
@@ -57,24 +61,25 @@ class BrowserWindow(QMainWindow):
             }
             QLineEdit:focus {
                 background-color: #ffffff;
-                border: 2px solid #a8c7fa; /* フォーカス時のハイライト */
+                border: 2px solid #a8c7fa; 
             }
             QTabWidget::pane {
                 border: none;
                 background-color: #ffffff;
             }
             QTabBar::tab {
-                background-color: transparent; /* アクティブでない時は背景と同化 */
+                background-color: transparent; 
                 color: #5f6368;
                 border: none;
                 padding: 10px 16px;
-                min-width: 120px;
+                min-width: 140px;
                 max-width: 240px;
-                border-radius: 12px; /* 独立した丸みのあるフローティングタブ */
+                border-radius: 12px;
                 margin-top: 8px;
-                margin-bottom: 2px;
+                margin-bottom: 4px;
                 margin-left: 2px;
                 margin-right: 2px;
+                font-size: 13px;
             }
             QTabBar::tab:selected {
                 background-color: #ffffff;
@@ -82,7 +87,7 @@ class BrowserWindow(QMainWindow):
                 font-weight: 500;
             }
             QTabBar::tab:hover:!selected {
-                background-color: #d7d8dc; /* わずかに濃いグレーでホバー */
+                background-color: #d7d8dc;
             }
         """)
 
@@ -112,22 +117,19 @@ class BrowserWindow(QMainWindow):
         navbar.setMovable(False)
         self.addToolBar(navbar)
 
-        # アイコンの取得
-        style = self.style()
-        icon_back = style.standardIcon(QStyle.StandardPixmap.SP_ArrowBack)
-        icon_forward = style.standardIcon(QStyle.StandardPixmap.SP_ArrowForward)
-        icon_reload = style.standardIcon(QStyle.StandardPixmap.SP_BrowserReload)
-        icon_add = style.standardIcon(QStyle.StandardPixmap.SP_FileIcon)
-
-        back_btn = QAction(icon_back, "Back", self)
+        # アイコンの代わりにモダンなフォントによるUnicodeを使用
+        back_btn = QAction("←", self)
+        back_btn.setToolTip("戻る")
         back_btn.triggered.connect(lambda: self.current_browser().back() if self.current_browser() else None)
         navbar.addAction(back_btn)
 
-        forward_btn = QAction(icon_forward, "Forward", self)
+        forward_btn = QAction("→", self)
+        forward_btn.setToolTip("進む")
         forward_btn.triggered.connect(lambda: self.current_browser().forward() if self.current_browser() else None)
         navbar.addAction(forward_btn)
 
-        reload_btn = QAction(icon_reload, "Reload", self)
+        reload_btn = QAction("↻", self)
+        reload_btn.setToolTip("再読み込み")
         reload_btn.triggered.connect(lambda: self.current_browser().reload() if self.current_browser() else None)
         navbar.addAction(reload_btn)
 
