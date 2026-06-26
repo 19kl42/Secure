@@ -16,7 +16,21 @@ class BlocklistManager:
         self.list_url = "https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts"
         
         self.blocked_domains = set()
+        
+        # ホワイトリストを外部ファイルから読み込む (GitHubにはプッシュしない)
+        self.whitelist_path = os.path.join(get_data_dir(), 'whitelist.json')
+        self.whitelist = self.load_whitelist()
+        
         self.load_local_lists()
+
+    def load_whitelist(self):
+        if os.path.exists(self.whitelist_path):
+            try:
+                with open(self.whitelist_path, 'r', encoding='utf-8') as f:
+                    return json.load(f)
+            except Exception:
+                pass
+        return []
 
     def load_local_lists(self):
         # 簡易リストの読み込み
@@ -88,13 +102,18 @@ class BlocklistManager:
         if not host:
             return False
             
-        # O(1) ハッシュ検索
+        # ホワイトリスト判定
+        for w in self.whitelist:
+            if host == w or host.endswith('.' + w):
+                return False
+
+        # 完全一致チェック (O(1))
         if host in self.blocked_domains:
             return True
             
-        # サブドメインの階層を遡ってチェック (例: a.b.ads.com -> b.ads.com -> ads.com)
+        # サブドメイン階層チェック (O(N))
         parts = host.split('.')
-        for i in range(1, len(parts) - 1):
+        for i in range(len(parts)-1):
             parent_domain = '.'.join(parts[i:])
             if parent_domain in self.blocked_domains:
                 return True
