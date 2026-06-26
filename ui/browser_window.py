@@ -1,5 +1,6 @@
 from PyQt6.QtCore import QUrl
-from PyQt6.QtWidgets import QMainWindow, QToolBar, QLineEdit, QAction, QTabWidget, QWidget, QVBoxLayout
+from PyQt6.QtGui import QAction
+from PyQt6.QtWidgets import QMainWindow, QToolBar, QLineEdit, QTabWidget, QWidget, QVBoxLayout
 from PyQt6.QtWebEngineWidgets import QWebEngineView
 from PyQt6.QtWebEngineCore import QWebEngineProfile
 from ui.privacy_shield import PrivacyShieldDialog
